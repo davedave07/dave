@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>真AI运动分析</title>
+    <style>
+        :root {
+            --primary: #007AFF;
+            --background: #F5F5F7;
+            --card: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 18px;
+            padding: 2rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.03);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        input, select {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>科学运动分析系统</h1>
+            <p style="color: #666; margin: 1rem 0 2rem;">基于WHO健康标准算法</p>
+
+            <div style="display: grid; gap: 1rem;">
+                <input type="number" id="height" placeholder="身高(cm)" min="100" max="250">
+                <input type="number" id="weight" placeholder="体重(kg)" min="30" max="300">
+                <input type="number" id="age" placeholder="年龄" min="10" max="100">
+                <select id="gender">
+                    <option value="male">男性</option>
+                    <option value="female">女性</option>
+                </select>
+                <button class="btn" onclick="calculate()">立即分析</button>
+            </div>
+        </div>
+
+        <div class="card" id="report" style="display: none;">
+            <h2>🏅 科学分析报告</h2>
+            <div id="bmiResult" style="margin: 1.5rem 0;"></div>
+            <div class="progress-bar">
+                <div class="progress" id="bmiProgress"></div>
+            </div>
+            <div id="calorieResult" style="margin: 1rem 0;"></div>
+            <div id="advice" style="line-height: 1.6; color: #444;"></div>
+        </div>
+    </div>
+
+    <script>
+        // WHO标准算法
+        function calculateBMR(weight, height, age, gender) {
+            if(gender === 'male') {
+                return 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+            }
+            return 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+        }
+
+        function getBMICategory(bmi) {
+            if(bmi < 18.5) return {label: "体重不足", color: "#FF3B30"};
+            if(bmi < 24) return {label: "健康体重", color: "#34C759"};
+            if(bmi < 28) return {label: "超重", color: "#FF9500"};
+            return {label: "肥胖", color: "#FF3B30"};
+        }
+
+        function calculate() {
+            const height = parseFloat(document.getElementById('height').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const age = parseInt(document.getElementById('age').value);
+            const gender = document.getElementById('gender').value;
+
+            if(!height || !weight || !age) return alert("请填写完整信息");
+
+            // 核心计算
+            const bmi = weight / ((height/100) ** 2);
+            const bmr = calculateBMR(weight, height, age, gender);
+            const dailyCalories = bmr * 1.55; // 中等活动系数
+
+            // 显示结果
+            const category = getBMICategory(bmi);
+            document.getElementById('report').style.display = 'block';
+            document.getElementById('bmiResult').innerHTML = `
+                <h3>BMI: ${bmi.toFixed(1)}</h3>
+                <p>健康状态: <span style="color:${category.color}">${category.label}</span></p>
+            `;
+            document.getElementById('bmiProgress').style.width = 
+                `${Math.min((bmi/35)*100, 100)}%`;
+            document.getElementById('bmiProgress').style.backgroundColor = category.color;
+
+            document.getElementById('calorieResult').innerHTML = `
+                <h3>每日推荐摄入</h3>
+                <p>${Math.round(dailyCalories)} 大卡/天 (含运动消耗)</p>
+            `;
+
+            // 生成建议
+            let advice = [];
+            if(bmi < 18.5) {
+                advice.push("🏋️ 增加力量训练，每周3次抗阻力训练");
+                advice.push("🥩 每日增加300-500大卡优质蛋白质摄入");
+            } else if(bmi >= 24) {
+                advice.push("🏃 每周至少150分钟中强度有氧运动");
+                advice.push("🥗 减少精制碳水摄入，增加膳食纤维");
+            }
+            advice.push("💧 每日饮水量建议："
+                + Math.round(weight * 35) + "毫升");
+            advice.push("🛌 保证7-8小时优质睡眠");
+
+            document.getElementById('advice').innerHTML = advice.map(a => 
+                `✓ ${a}`).join('<br>');
+        }
+    </script>
+</body>
+</html>
